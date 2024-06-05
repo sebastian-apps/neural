@@ -87,8 +87,10 @@ func process() {
 	// Seed the random number generator to ensure different results each run
 	rand.Seed(time.Now().UnixNano())
 
-	for i := 0; i < 10000; i++ {
-		fmt.Println(i)
-		runPredictions(data, floatRecords, numCols)
-	}
+	runPredictions(data, floatRecords, numCols)
+
+	// for i := 0; i < 10000; i++ {
+	// 	fmt.Println(i)
+	// 	runPredictions(data, floatRecords, numCols)
+	// }
 }
