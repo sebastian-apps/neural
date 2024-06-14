@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 from icecream import ic
 import json
@@ -69,7 +68,7 @@ def get_predictions(A2):
     return np.argmax(A2, 0)
 
 def get_accuracy(predictions, Y):
-    print(predictions, Y)
+    # print(predictions, Y)
     return np.sum(predictions == Y) / Y.size
 
 def make_predictions(X, W1, b1, W2, b2):
@@ -90,7 +89,7 @@ def test_prediction(index, W1, b1, W2, b2, X_train, Y_train):
     plt.show()
 
 
-def output_json(W1, b1, W2, b2):
+def output_json(W1, b1, W2, b2, filepath):
 
     weights_biases = {
         "W1": W1.tolist(),
@@ -101,8 +100,7 @@ def output_json(W1, b1, W2, b2):
 
     json_string = json.dumps(weights_biases, indent=4)
 
-    filename = '../weights_and_biases.json'
-    with open(filename, 'w') as file:
+    with open(filepath, 'w') as file:
         file.write(json_string)
 
 

@@ -148,7 +148,6 @@ func runPredictions(data Data, floatRecords [][]float64, numCols int) {
 
 	devPredictions := makePredictions(X_dev, data.W1, data.B1, data.W2, data.B2)
 	acc := getAccuracy(devPredictions, Y_dev)
-
 	fmt.Printf("Accuracy: %.2f\n", acc)
 }
 
@@ -355,4 +354,34 @@ func testPrediction(
 	label := Y_train[index]
 	fmt.Println("Prediction: ", prediction)
 	fmt.Println("Label: ", label)
+}
+
+// Refactor redundancy
+func loadDevData(floatRecords [][]float64, numCols int) ([][]float64, []int) {
+	// Randomly shuffle the rows of the 2D slice
+	rand.Shuffle(len(floatRecords), func(i, j int) {
+		floatRecords[i], floatRecords[j] = floatRecords[j], floatRecords[i]
+	})
+
+	// // Print the converted records
+	// fmt.Println(floatRecords)
+
+	dataSliced := floatRecords[:1000]
+	dataTransposed := transpose(dataSliced)
+	dataTransposedInt := transposeInt(float64ToInt(dataSliced))
+	Y_dev := dataTransposedInt[0]
+	X_dev := dataTransposed[1:numCols]
+
+	// Dividing each element of X_dev by 255
+	for i := range X_dev {
+		for j := range X_dev[i] {
+			X_dev[i][j] /= 255.0
+		}
+	}
+
+	// Printing Y_dev and a portion of X_dev to verify
+	fmt.Println("Y_dev:", Y_dev[:5])           // Print first 5 elements of Y_dev for brevity
+	fmt.Println("X_dev sample:", X_dev[0][:5]) // Print first 5 elements of the first row of X_dev for brevity
+
+	return X_dev, Y_dev
 }
