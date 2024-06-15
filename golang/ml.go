@@ -14,16 +14,16 @@ import (
 	_ "net/http/pprof"
 )
 
-func pipeline() { // rename to main()
+func pipeline() {
 
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	fmt.Println("Running neural_network_from_scratch_in_go")
+	fmt.Println("Running...")
 
 	// Load training data
-	file, err := os.Open("../digit-recognizer/train.csv")
+	file, err := os.Open(TrainingDataFilePath)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -40,14 +40,6 @@ func pipeline() { // rename to main()
 	// Remove the header row
 	records = records[1:]
 
-	// Determine the dimensions of records
-	numRows := len(records)
-	numCols := 0
-	if numRows > 0 {
-		numCols = len(records[0]) // Assuming uniformity in the slice
-	}
-	fmt.Printf("Shape of records: %d rows x %d columns\n", numRows, numCols)
-
 	// Convert [][]string to [][]float64
 	floatRecords, err := convertToFloat64(records)
 	if err != nil {
@@ -55,7 +47,7 @@ func pipeline() { // rename to main()
 		return
 	}
 
-	_, _ = getDimensions2DFloat(floatRecords)
+	numRows, numCols := getDimensions2DFloat(floatRecords)
 
 	// Seed the random number generator to ensure different results each run
 	rand.Seed(time.Now().UnixNano())
@@ -64,9 +56,6 @@ func pipeline() { // rename to main()
 	rand.Shuffle(len(floatRecords), func(i, j int) {
 		floatRecords[i], floatRecords[j] = floatRecords[j], floatRecords[i]
 	})
-
-	// // Print the converted records
-	// fmt.Println(floatRecords)
 
 	dataSliced := floatRecords[:1000]
 	dataTransposed := transpose(dataSliced)
@@ -81,16 +70,15 @@ func pipeline() { // rename to main()
 		}
 	}
 
-	// Printing Y_dev and a portion of X_dev to verify
-	fmt.Println("Y_dev:", Y_dev[:5])           // Print first 5 elements of Y_dev for brevity
-	fmt.Println("X_dev sample:", X_dev[0][:5]) // Print first 5 elements of the first row of X_dev for brevity
+	fmt.Println("Y_dev:", Y_dev[:5])
+	fmt.Println("X_dev sample:", X_dev[0][:5])
 
 	// Slicing data[1000:num_rows] and Transposing
 	dataSliced = floatRecords[1000:numRows]
 	dataTrain := transpose(dataSliced)
 	dataTrainInt := transposeInt(float64ToInt((dataSliced)))
 	Y_train := dataTrainInt[0]
-	X_train := dataTrain[1:numCols] // Assuming num_cols is within bounds
+	X_train := dataTrain[1:numCols]
 
 	// Dividing each element of X_train by 255
 	for i := range X_train {
@@ -102,10 +90,8 @@ func pipeline() { // rename to main()
 	// Determining the shape of X_train
 	mNum := len(X_train[0]) // Number of columns in X_train
 
-	// Printing Y_train
 	fmt.Println("Y_train:", Y_train)
 
-	// Printing the shape of X_train
 	fmt.Printf("mNum: %d", mNum)
 
 	W1, b1, W2, b2 := gradientDescent(X_train, Y_train, 0.10, 500, mNum)
@@ -126,9 +112,6 @@ func runPredictions(data Data, floatRecords [][]float64, numCols int) {
 		floatRecords[i], floatRecords[j] = floatRecords[j], floatRecords[i]
 	})
 
-	// // Print the converted records
-	// fmt.Println(floatRecords)
-
 	dataSliced := floatRecords[:1000]
 	dataTransposed := transpose(dataSliced)
 	dataTransposedInt := transposeInt(float64ToInt(dataSliced))
@@ -142,9 +125,8 @@ func runPredictions(data Data, floatRecords [][]float64, numCols int) {
 		}
 	}
 
-	// Printing Y_dev and a portion of X_dev to verify
-	fmt.Println("Y_dev:", Y_dev[:5])           // Print first 5 elements of Y_dev for brevity
-	fmt.Println("X_dev sample:", X_dev[0][:5]) // Print first 5 elements of the first row of X_dev for brevity
+	fmt.Println("Y_dev:", Y_dev[:5])
+	fmt.Println("X_dev sample:", X_dev[0][:5])
 
 	devPredictions := makePredictions(X_dev, data.W1, data.B1, data.W2, data.B2)
 	acc := getAccuracy(devPredictions, Y_dev)
@@ -363,9 +345,6 @@ func loadDevData(floatRecords [][]float64, numCols int) ([][]float64, []int) {
 		floatRecords[i], floatRecords[j] = floatRecords[j], floatRecords[i]
 	})
 
-	// // Print the converted records
-	// fmt.Println(floatRecords)
-
 	dataSliced := floatRecords[:1000]
 	dataTransposed := transpose(dataSliced)
 	dataTransposedInt := transposeInt(float64ToInt(dataSliced))
@@ -379,9 +358,8 @@ func loadDevData(floatRecords [][]float64, numCols int) ([][]float64, []int) {
 		}
 	}
 
-	// Printing Y_dev and a portion of X_dev to verify
-	fmt.Println("Y_dev:", Y_dev[:5])           // Print first 5 elements of Y_dev for brevity
-	fmt.Println("X_dev sample:", X_dev[0][:5]) // Print first 5 elements of the first row of X_dev for brevity
+	fmt.Println("Y_dev:", Y_dev[:5])
+	fmt.Println("X_dev sample:", X_dev[0][:5])
 
 	return X_dev, Y_dev
 }

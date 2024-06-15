@@ -1,7 +1,5 @@
 package main
 
-// train in python, parallelize is python?, save to json, load in go, run prediction in go, parallelize in go?
-
 import (
 	"fmt"
 	"math"
@@ -204,8 +202,6 @@ func ReLUderiv(Z [][]float64) [][]float64 {
 	// Iterate over the elements of Z.
 	for i, row := range Z {
 		for j, val := range row {
-			// If the element is greater than 0, set the corresponding element in result to 1.
-			// Otherwise, set it to 0.
 			if val > 0 {
 				result[i][j] = 1
 			} else {

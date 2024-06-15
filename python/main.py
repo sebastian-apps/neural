@@ -18,11 +18,11 @@ def main():
  
     # run_predict()
 
-    predict_sequential()
+    # predict_sequential()
 
     # predict_multiprocess()
 
-    # predict_multiprocess2()
+    predict_multiprocess2()
 
 
 
@@ -115,7 +115,7 @@ def run_predict():
 
     dev_predictions = ml.make_predictions(X_test, W1, b1, W2, b2)
 
-    print(dev_predictions[:50])
+    print(dev_predictions[:10])
 
     print(ml.get_accuracy(dev_predictions, Y_test))
 
@@ -127,7 +127,7 @@ def predict_sequential():
     def f(X_test, Y_test, W1, b1, W2, b2): 
         dev_predictions = ml.make_predictions(X_test, W1, b1, W2, b2)
         acc = ml.get_accuracy(dev_predictions, Y_test)
-        print(acc)
+        print(f"dev_predictions[:10]: {dev_predictions[:10]}, accuracy: {acc}")
         return acc
 
     X_test, Y_test = load_dev_data()
@@ -234,7 +234,7 @@ def predict_multiprocess2():
 def worker(num, input, W1, b1, W2, b2):
     print(f'Worker {num} started')
     dev_predictions = ml.make_predictions(input, W1, b1, W2, b2)
-    print("dev_predictions:", dev_predictions)
+    print("dev_predictions[:10]:", dev_predictions[:10])
     print(f'Worker {num} finished.')
 
 

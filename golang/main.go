@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime/pprof"
 	"sync"
 	"time"
 
@@ -38,6 +39,23 @@ func main() {
 	// predictSequential()
 
 	predictMultiprocess()
+}
+
+func profile2() {
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	defer f.Close()
+	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+
+	// Program logic here
+	predictMultiprocess()
+
+	// cli: go tool pprof cpu.prof
 }
 
 func runPredict() {
@@ -92,7 +110,7 @@ func runPredict() {
 	X_dev, Y_dev := loadDevData(floatRecords, numCols)
 
 	devPredictions := makePredictions(X_dev, data.W1, data.B1, data.W2, data.B2)
-	fmt.Println("devPredictions:", devPredictions)
+	// fmt.Println("devPredictions:", devPredictions)
 	acc := getAccuracy(devPredictions, Y_dev)
 	fmt.Printf("Accuracy: %.2f\n", acc)
 
@@ -215,7 +233,7 @@ func predictMultiprocess() {
 	var wg sync.WaitGroup
 
 	// Create 10 goroutines
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go worker(&wg, i, data, X_dev)
 	}
@@ -231,5 +249,5 @@ func worker(wg *sync.WaitGroup, num int, model Data, input [][]float64) {
 	fmt.Printf("Worker %d started\n", num)
 	devPredictions := makePredictions(input, model.W1, model.B1, model.W2, model.B2)
 	fmt.Printf("Worker %d finished.\n", num)
-	fmt.Println("devPredictions:", devPredictions)
+	fmt.Println("devPredictions:", devPredictions[:10])
 }
