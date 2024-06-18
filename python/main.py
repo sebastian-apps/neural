@@ -6,6 +6,8 @@ import timeit
 import multiprocessing
 import time 
 from functools import partial
+import cProfile
+import pstats
 
 PARAMS_JSON_FILE_PATH = '../weights_and_biases.json'
 TRAINING_DATA_FILE_PATH = '../digit-recognizer/train.csv'
@@ -15,14 +17,37 @@ def main():
     """Feedforward Neural Network (FNN) workflow."""     
 
     # run_train()
- 
-    # run_predict()
 
-    # predict_sequential()
+    infer()
 
-    # predict_multiprocess()
 
-    predict_multiprocess2()
+
+def infer():
+    """Make inferences using a trained model."""
+    # Load model parameters and convert lists to numpy arrays.
+    with open(PARAMS_JSON_FILE_PATH, 'r') as file:
+        model_params = json.load(file)
+    model = {}
+    for key, vals in model_params.items():
+        model.update({key: np.array(vals)})
+
+    # W1 = np.array(data.get("W1"))
+    # b1 = np.array(data.get("b1"))
+    # W2 = np.array(data.get("W2"))
+    # b2 = np.array(data.get("b2"))
+
+    X_test, Y_test = load_dev_data()
+    print("X_test sample:", X_test[0][:5])
+    print("X_test shape:", X_test.shape)
+
+
+    # run_predict(model, X_test, Y_test)
+
+    # predict_sequential(model, X_test, Y_test)
+
+    predict_multiprocess_pool(model, X_test, Y_test)
+
+    # predict_multiprocess(model, X_test)
 
 
 
@@ -73,8 +98,6 @@ def run_train():
     ml.output_json(W1, b1, W2, b2, PARAMS_JSON_FILE_PATH)
 
 
-
-
 def load_dev_data():
     """ Load the development set for testing. """
     data = pd.read_csv(TRAINING_DATA_FILE_PATH)
@@ -91,61 +114,51 @@ def load_dev_data():
     return X_dev, Y_dev
 
 
+def profile(func):
+    def wrapper(*args, **kwargs):
+        profiler = cProfile.Profile()
+        profiler.enable()
+        result = func(*args, **kwargs)
+        profiler.disable()
+        # profiler.print_stats(sort='cumulative')
+        filename="profile_results"
+        with open(filename, 'w') as f:
+            ps = pstats.Stats(profiler, stream=f)
+            ps.dump_stats(filename)
+        return result
+    return wrapper
 
-def run_predict():
-    """Make inferences using a trained model."""
 
-    X_test, Y_test = load_dev_data()
+    # cProfile.run('run_predict()', 'profile_results')
+    # # do: snakeviz profile_results
+    # p = pstats.Stats('profile_results')
+    # p.sort_stats('cumulative')  #.print_stats(20)
+    # print(p.print_stats(20))
 
-    # Load model parameters
-    with open(PARAMS_JSON_FILE_PATH, 'r') as file:
-        data = json.load(file)
+    # results = pstats.Stats(cProfile.run("run_predict()"))
+    # results.sort_stats(pstats.SortKey.TIME)
+    # results.print_stats()
 
-    # Print the dictionary keys verify its content
-    print(data.keys())
 
-    W1 = np.array(data.get("W1"))
-    b1 = np.array(data.get("b1"))
-    W2 = np.array(data.get("W2"))
-    b2 = np.array(data.get("b2"))
-
-    # print("Y_test:", Y_test[:5])
-    print("X_test sample:", X_test[0][:5])
-    print("X_test shape:", X_test.shape)
-
-    dev_predictions = ml.make_predictions(X_test, W1, b1, W2, b2)
-
+@profile
+def run_predict(model, X_test, Y_test):
+    dev_predictions = ml.make_predictions(X_test, model["W1"], model["b1"], model["W2"], model["b2"])
     print(dev_predictions[:10])
-
     print(ml.get_accuracy(dev_predictions, Y_test))
 
 
-
-def predict_sequential():
+@profile
+def predict_sequential(model, X_test, Y_test):
     """Sequential processing."""
 
-    def f(X_test, Y_test, W1, b1, W2, b2): 
-        dev_predictions = ml.make_predictions(X_test, W1, b1, W2, b2)
+    def f(X_test, Y_test, model): 
+        dev_predictions = ml.make_predictions(X_test, model["W1"], model["b1"], model["W2"], model["b2"])
         acc = ml.get_accuracy(dev_predictions, Y_test)
         print(f"dev_predictions[:10]: {dev_predictions[:10]}, accuracy: {acc}")
         return acc
 
-    X_test, Y_test = load_dev_data()
-
-    # Load model parameters.
-    with open(PARAMS_JSON_FILE_PATH, 'r') as file:
-        data = json.load(file)
-
-    # Print the dictionary keys verify its content
-    print(data.keys())
-
-    W1 = np.array(data.get("W1"))
-    b1 = np.array(data.get("b1"))
-    W2 = np.array(data.get("W2"))
-    b2 = np.array(data.get("b2"))
-
     # Create a partial function with fixed arguments
-    func = partial(f, X_test, Y_test, W1, b1, W2, b2)
+    func = partial(f, X_test, Y_test, model)
 
     # Number of times to run the method
     num_runs = 10
@@ -156,34 +169,19 @@ def predict_sequential():
 
 
 
-def pred(X_test, Y_test, W1, b1, W2, b2, _):  # extra arg is for multiprocessing
-    dev_predictions = ml.make_predictions(X_test, W1, b1, W2, b2)
+def pred(X_test, Y_test, model, _):  # extra arg is for multiprocessing
+    dev_predictions = ml.make_predictions(X_test, model["W1"], model["b1"], model["W2"], model["b2"])
     acc = ml.get_accuracy(dev_predictions, Y_test)
     return acc
 
-
-def predict_multiprocess():
-
-    X_test, Y_test = load_dev_data()
-
-    # Load model parameters
-    with open(PARAMS_JSON_FILE_PATH, 'r') as file:
-        data = json.load(file)
-
-    # Print the dictionary keys verify its content
-    print(data.keys())
-
-    W1 = np.array(data.get("W1"))
-    b1 = np.array(data.get("b1"))
-    W2 = np.array(data.get("W2"))
-    b2 = np.array(data.get("b2"))
-
-    
+@profile
+def predict_multiprocess_pool(model, X_test, Y_test):
+  
     num_runs = 10 # Number of times to run the method
     num_processes = multiprocessing.cpu_count()
 
     # Create a partial function with fixed arguments
-    func = partial(pred, X_test, Y_test, W1, b1, W2, b2)
+    func = partial(pred, X_test, Y_test, model)
 
     start_time = time.time()
 
@@ -198,29 +196,15 @@ def predict_multiprocess():
 
 
 
-
-def predict_multiprocess2():
-
-    X_test, _ = load_dev_data()
-
-    # Load data
-    with open(PARAMS_JSON_FILE_PATH, 'r') as file:
-        data = json.load(file)
-
-    # Print the dictionary keys verify its content
-    print(data.keys())
-
-    W1 = np.array(data.get("W1"))
-    b1 = np.array(data.get("b1"))
-    W2 = np.array(data.get("W2"))
-    b2 = np.array(data.get("b2"))
+@profile
+def predict_multiprocess(model, X_test):
 
     start_time = time.time()
     processes = []
 
     # Create 10 processes
     for i in range(10): 
-        p = multiprocessing.Process(target=worker, args=(i, X_test, W1, b1, W2, b2, ))
+        p = multiprocessing.Process(target=worker, args=(i, X_test, model))
         processes.append(p)
         p.start()
 
@@ -231,9 +215,9 @@ def predict_multiprocess2():
     print(f'Time taken: {end_time - start_time} seconds')
 
 
-def worker(num, input, W1, b1, W2, b2):
+def worker(num, input, model):
     print(f'Worker {num} started')
-    dev_predictions = ml.make_predictions(input, W1, b1, W2, b2)
+    dev_predictions = ml.make_predictions(input, model["W1"], model["b1"], model["W2"], model["b2"])
     print("dev_predictions[:10]:", dev_predictions[:10])
     print(f'Worker {num} finished.')
 
