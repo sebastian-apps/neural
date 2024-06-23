@@ -45,10 +45,9 @@ def infer():
 
     # predict_sequential(model, X_test, Y_test)
 
-    predict_multiprocess_pool(model, X_test, Y_test)
+    predict_multiprocess(model, X_test)
 
-    # predict_multiprocess(model, X_test)
-
+    # predict_multiprocess_pool(model, X_test, Y_test)
 
 
 def run_train():
@@ -161,7 +160,7 @@ def predict_sequential(model, X_test, Y_test):
     func = partial(f, X_test, Y_test, model)
 
     # Number of times to run the method
-    num_runs = 10
+    num_runs = 1000
 
     execution_time = timeit.timeit(func, number=num_runs) 
     print(f"Execution time: {execution_time} seconds")
@@ -177,7 +176,7 @@ def pred(X_test, Y_test, model, _):  # extra arg is for multiprocessing
 @profile
 def predict_multiprocess_pool(model, X_test, Y_test):
   
-    num_runs = 10 # Number of times to run the method
+    num_runs = 1000 # Number of times to run the method
     num_processes = multiprocessing.cpu_count()
 
     # Create a partial function with fixed arguments
@@ -202,8 +201,9 @@ def predict_multiprocess(model, X_test):
     start_time = time.time()
     processes = []
 
-    # Create 10 processes
-    for i in range(10): 
+    # Create num_runs number of processes
+    num_runs = 1000
+    for i in range(num_runs): 
         p = multiprocessing.Process(target=worker, args=(i, X_test, model))
         processes.append(p)
         p.start()
